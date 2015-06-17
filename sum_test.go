@@ -6,6 +6,7 @@ import (
 )
 
 func TestSum_SimpleInsulator(t *testing.T) {
+	use_cache := true
 	n := 8
 	a := 1.0
 	R := cubicR(a)
@@ -18,7 +19,7 @@ func TestSum_SimpleInsulator(t *testing.T) {
 		return simplebands_Efn(k, num_bands, t0, E0, deltaE)
 	}
 
-	Esum, E_Fermi, err := SumEnergy(Efn, n, num_electrons, R)
+	Esum, E_Fermi, err := SumEnergy(Efn, n, num_electrons, R, use_cache)
 	if err != nil {
 		t.Fatal(err)
 	}

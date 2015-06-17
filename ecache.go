@@ -12,6 +12,7 @@ type EnergyCache interface {
 }
 
 type energyCacheRam struct {
+	use_cache bool
 	n         int
 	num_bands int
 	G_order   [3]int
@@ -20,7 +21,7 @@ type energyCacheRam struct {
 	Eks       [][]float64
 }
 
-func NewEnergyCache(n, num_bands int, G_order, G_neg [3]int, Efn InputFn) EnergyCache {
+func NewEnergyCache(n, num_bands int, G_order, G_neg [3]int, Efn InputFn, use_cache bool) EnergyCache {
 	// Default to RAM cache for now.
 	// TODO - check n to choose RAM cache or disk cache.
 	ec := new(energyCacheRam)
@@ -30,17 +31,23 @@ func NewEnergyCache(n, num_bands int, G_order, G_neg [3]int, Efn InputFn) Energy
 	ec.G_order = G_order
 	ec.G_neg = G_neg
 	ec.Efn = Efn
-	// Only need to pre-allocate Eks for k-points.
-	// Will set (k, band) eigenvalue list after k-point is queried.
-	Eks := make([][]float64, nks)
-	ec.Eks = Eks
+	ec.use_cache = use_cache
+	if use_cache {
+		// Only need to pre-allocate Eks for k-points.
+		// Will set (k, band) eigenvalue list after k-point is queried.
+		Eks := make([][]float64, nks)
+		ec.Eks = Eks
+	} else {
+		Eks := [][]float64{}
+		ec.Eks = Eks
+	}
 	return ec
 }
 
 func (ec *energyCacheRam) EnergyAt(i, j, k, band_index int) float64 {
 	k_opt := submesh_ijk_to_k(ec.n, i, j, k)
 	k_index := submesh_index(ec.n, i, j, k)
-	if ec.Eks[k_index] != nil {
+	if ec.use_cache && ec.Eks[k_index] != nil {
 		// Already queried this (i, k, k).
 		return ec.Eks[k_index][band_index]
 	}
@@ -50,7 +57,9 @@ func (ec *energyCacheRam) EnergyAt(i, j, k, band_index int) float64 {
 	if !sort.Float64sAreSorted(Es) {
 		panic("Got unsorted values from Efn in EnergyAt()")
 	}
-	ec.Eks[k_index] = Es
+	if ec.use_cache {
+		ec.Eks[k_index] = Es
+	}
 	return Es[band_index]
 }
 
