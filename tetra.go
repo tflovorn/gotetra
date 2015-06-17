@@ -29,6 +29,7 @@ func iterTetras_worker(n, band_index int, Ecache EnergyCache, Ets chan [4]float6
 			}
 		}
 	}
+	close(Ets)
 }
 
 func subcell_points(i, j, k int) [8][3]int {
@@ -41,13 +42,13 @@ func submesh_index(n, i, j, k int) int {
 
 func submesh_ijk(n, index int) (int, int, int) {
 	i := index % (n + 1)
-	j := ((index % ((n + 1) * (n + 1))) - i) / (n + 1)
-	k := (index - i - j*(n+1)) / ((n + 1) * (n + 1))
+	j := round(float64((index%((n+1)*(n+1)))-i) / float64(n+1))
+	k := round(float64(index-i-j*(n+1)) / float64((n+1)*(n+1)))
 	return i, j, k
 }
 
 func submesh_ijk_to_k(n, i, j, k int) [3]float64 {
-	step := float64(1 / n)
+	step := 1.0 / float64(n)
 	return [3]float64{float64(i) * step, float64(j) * step, float64(k) * step}
 }
 

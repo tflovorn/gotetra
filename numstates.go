@@ -36,16 +36,16 @@ func NumStatesContrib(E, E1, E2, E3, E4, num_tetra float64) float64 {
 	if E <= E1 {
 		return 0.0
 	} else if E1 < E && E < E2 {
-		return (1 / num_tetra) * (E - E1) * (E - E1) * (E - E1) / ((E2 - E1) * (E3 - E1) * (E4 - E1))
+		return (1.0 / num_tetra) * (E - E1) * (E - E1) * (E - E1) / ((E2 - E1) * (E3 - E1) * (E4 - E1))
 	} else if E2 < E && E < E3 {
-		fac := (1 / num_tetra) / ((E3 - E1) * (E4 - E1))
+		fac := (1.0 / num_tetra) / ((E3 - E1) * (E4 - E1))
 		esq := (E2-E1)*(E2-E1) + 3*(E2-E1)*(E-E2) + 3*(E-E2)*(E-E2)
 		ecub := -(((E3 - E1) + (E4 - E2)) / ((E3 - E2) * (E4 - E2))) * (E - E2) * (E - E2) * (E - E2)
 		return fac * (esq + ecub)
 	} else if E3 < E && E < E4 {
-		return (1 / num_tetra) * (1 - (E4-E)*(E4-E)*(E4-E)/((E4-E1)*(E4-E2)*(E4-E3)))
+		return (1.0 / num_tetra) * (1.0 - (E4-E)*(E4-E)*(E4-E)/((E4-E1)*(E4-E2)*(E4-E3)))
 	} else {
 		// E >= E4
-		return (1 / num_tetra)
+		return (1.0 / num_tetra)
 	}
 }

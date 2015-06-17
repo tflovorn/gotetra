@@ -36,7 +36,7 @@ func NewEnergyCache(n, num_bands int, G_order, G_neg [3]int, Efn InputFn) Energy
 func (ec *energyCacheRam) EnergyAt(i, j, k, band_index int) float64 {
 	k_opt := submesh_ijk_to_k(ec.n, i, j, k)
 	k_index := submesh_index(ec.n, i, j, k)
-	if ec.Eks[k_index] == nil {
+	if ec.Eks[k_index] != nil {
 		// Already queried this (i, k, k).
 		return ec.Eks[k_index][band_index]
 	}
