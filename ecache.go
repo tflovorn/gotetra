@@ -1,5 +1,9 @@
 package gotetra
 
+import (
+	"sort"
+)
+
 type EnergyCache interface {
 	EnergyAt(i, j, k, band_index int) float64
 	NumBands() int
@@ -43,6 +47,9 @@ func (ec *energyCacheRam) EnergyAt(i, j, k, band_index int) float64 {
 	// Haven't seen this (i, j, k) before; set it.
 	k_orig := Get_k_Orig(k_opt, ec.G_order, ec.G_neg)
 	Es := ec.Efn(k_orig)
+	if !sort.Float64sAreSorted(Es) {
+		panic("Got unsorted values from Efn in EnergyAt()")
+	}
 	ec.Eks[k_index] = Es
 	return Es[band_index]
 }

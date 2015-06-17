@@ -2,34 +2,67 @@ package gotetra
 
 func IterTetras(n, band_index int, Ecache EnergyCache) chan [4]float64 {
 	Ets := make(chan [4]float64)
-	go iterTetras_worker(n, band_index, Ecache, Ets)
+	go iterTetras_worker(n, band_index, Ecache, Ets, nil)
 	return Ets
 }
 
-func iterTetras_worker(n, band_index int, Ecache EnergyCache, Ets chan [4]float64) {
+func iterTetras_worker(n, band_index int, Ecache EnergyCache, Ets_chan chan [4]float64, ks_chan chan [4][3]int) {
 	// TODO - should vEs be declared before loop for efficency?
 	// Placed in loop since it seems like it may hit race condition if
 	// outside of inner loop scope.
-
+	tetras := subcell_tetras()
 	// Iterate over tetrahedra.
-	subcell_tetras := [6][4]int{[4]int{1, 2, 3, 6}, [4]int{1, 3, 5, 6}, [4]int{3, 5, 6, 7}, [4]int{3, 6, 7, 8}, [4]int{3, 4, 6, 8}, [4]int{2, 3, 4, 6}}
 	for k := 0; k < n; k++ {
 		for j := 0; j < n; j++ {
 			for i := 0; i < n; i++ {
 				points := subcell_points(i, j, k)
-				for _, sc_t := range subcell_tetras {
+				for _, sc_t := range tetras {
 					vEs := [4]float64{0.0, 0.0, 0.0, 0.0}
+					ks := [4][3]int{[3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}}
 					// Collect band energy at vertices.
 					for v, point_index := range sc_t {
 						pi, pj, pk := points[point_index-1][0], points[point_index-1][1], points[point_index-1][2]
+						ks[v] = [3]int{pi, pj, pk}
 						vEs[v] = Ecache.EnergyAt(pi, pj, pk, band_index)
 					}
-					Ets <- vEs
+					// Sort and yield vertex energies.
+					sortEsKs(&vEs, &ks)
+					Ets_chan <- vEs
+					// Yield associated ks if requested.
+					if ks_chan != nil {
+						ks_chan <- ks
+					}
 				}
 			}
 		}
 	}
-	close(Ets)
+	close(Ets_chan)
+	if ks_chan != nil {
+		close(ks_chan)
+	}
+}
+
+func IterTetrasKs(n, band_index int, Ecache EnergyCache) (chan [4]float64, chan [4][3]int) {
+	Ets_chan, ks_chan := make(chan [4]float64), make(chan [4][3]int)
+	go iterTetras_worker(n, band_index, Ecache, Ets_chan, ks_chan)
+	return Ets_chan, ks_chan
+}
+
+func sortEsKs(Es *[4]float64, ks *[4][3]int) {
+	// insertion sort
+	for i := 1; i < 4; i++ {
+		j := i
+		for j > 0 && Es[j-1] > Es[j] {
+			// swap j, j-1
+			Es[j], Es[j-1] = Es[j-1], Es[j]
+			ks[j], ks[j-1] = ks[j-1], ks[j]
+			j -= 1
+		}
+	}
+}
+
+func subcell_tetras() [6][4]int {
+	return [6][4]int{[4]int{1, 2, 3, 6}, [4]int{1, 3, 5, 6}, [4]int{3, 5, 6, 7}, [4]int{3, 6, 7, 8}, [4]int{3, 4, 6, 8}, [4]int{2, 3, 4, 6}}
 }
 
 func subcell_points(i, j, k int) [8][3]int {
