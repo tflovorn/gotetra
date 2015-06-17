@@ -1,6 +1,7 @@
 package gotetra
 
 import (
+	"math"
 	"testing"
 )
 
@@ -21,6 +22,13 @@ func TestSum_SimpleInsulator(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	println("Sum", Esum)
-	println("E_Fermi", E_Fermi)
+
+	expected_sum := E0
+	eps := 1e-9
+	if math.Abs(Esum-expected_sum) > eps {
+		t.Fatalf("Incorrect energy sum")
+	}
+	if E_Fermi < E0+6.0*t0 || E_Fermi > E0+deltaE-6.0*t0 {
+		t.Fatalf("Incorrect Fermi energy position")
+	}
 }
