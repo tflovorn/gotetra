@@ -82,6 +82,19 @@ func iterTetrasAround_worker(n, i, j, k, band_index int, Ecache EnergyCache, Ets
 			vEs := [4]float64{0.0, 0.0, 0.0, 0.0}
 			ks := [4][3]int{[3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}}
 			// Collect band energy at vertices.
+			// Skip tetrahedra that do not include (i, j, k).
+			ijk_seen := false
+			for v, point_index := range sc_t {
+				pi, pj, pk := sc_points[point_index-1][0], sc_points[point_index-1][1], sc_points[point_index-1][2]
+				if pi == i && pj == j && pk == k {
+					ijk_seen = true
+				}
+				ks[v] = [3]int{pi, pj, pk}
+				vEs[v] = Ecache.EnergyAt(pi, pj, pk, band_index)
+			}
+			if !ijk_seen {
+				continue
+			}
 			for v, point_index := range sc_t {
 				pi, pj, pk := sc_points[point_index-1][0], sc_points[point_index-1][1], sc_points[point_index-1][2]
 				ks[v] = [3]int{pi, pj, pk}
