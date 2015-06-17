@@ -3,6 +3,8 @@ package gotetra
 type EnergyCache interface {
 	EnergyAt(i, j, k, band_index int) float64
 	NumBands() int
+	MinE() float64
+	MaxE() float64
 }
 
 type energyCacheRam struct {
@@ -47,4 +49,42 @@ func (ec *energyCacheRam) EnergyAt(i, j, k, band_index int) float64 {
 
 func (ec *energyCacheRam) NumBands() int {
 	return ec.num_bands
+}
+
+func (ec *energyCacheRam) MinE() float64 {
+	minval := 0.0
+	minval_init := false
+	for i := 0; i < ec.n+1; i++ {
+		for j := 0; j < ec.n+1; j++ {
+			for k := 0; k < ec.n+1; k++ {
+				for b := 0; b < ec.num_bands; b++ {
+					E := ec.EnergyAt(i, j, k, b)
+					if !minval_init || E < minval {
+						minval = E
+						minval_init = true
+					}
+				}
+			}
+		}
+	}
+	return minval
+}
+
+func (ec *energyCacheRam) MaxE() float64 {
+	maxval := 0.0
+	maxval_init := false
+	for i := 0; i < ec.n+1; i++ {
+		for j := 0; j < ec.n+1; j++ {
+			for k := 0; k < ec.n+1; k++ {
+				for b := 0; b < ec.num_bands; b++ {
+					E := ec.EnergyAt(i, j, k, b)
+					if !maxval_init || E > maxval {
+						maxval = E
+						maxval_init = true
+					}
+				}
+			}
+		}
+	}
+	return maxval
 }
