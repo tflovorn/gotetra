@@ -17,14 +17,14 @@ func DosContrib(E, E1, E2, E3, E4, num_tetra float64) {
 	if E <= E1 {
 		return 0.0
 	} else if E1 < E && E < E2 {
-		return (1 / num_tetra) * 3 * math.Pow(E-E1, 2) / ((E2 - E1) * (E3 - E1) * (E4 - E1))
+		return (1 / num_tetra) * 3 * (E - E1) * (E - E1) / ((E2 - E1) * (E3 - E1) * (E4 - E1))
 	} else if E2 < E && E < E3 {
 		fac = (1 / num_tetra) / ((E3 - E1) * (E4 - E1))
 		elin = 3*(E2-E1) + 6*(E-E2)
-		esq = -3 * (((E3 - E1) + (E4 - E2)) / ((E3 - E2) * (E4 - E2))) * math.Pow(E-E2, 2)
+		esq = -3 * (((E3 - E1) + (E4 - E2)) / ((E3 - E2) * (E4 - E2))) * (E - E2) * (E - E2)
 		return fac * (elin + esq)
 	} else if E3 < E && E < E4 {
-		return (1 / num_tetra) * 3 * math.Pow(E4-E, 2) / ((E4 - E1) * (E4 - E2) * (E4 - E3))
+		return (1 / num_tetra) * 3 * (E4 - E) * (E4 - E) / ((E4 - E1) * (E4 - E2) * (E4 - E3))
 	} else {
 		// E >= E4
 		return 0.0

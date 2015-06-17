@@ -36,25 +36,16 @@ func NumStatesContrib(E, E1, E2, E3, E4, num_tetra float64) {
 	if E <= E1 {
 		return 0.0
 	} else if E1 < E && E < E2 {
-		return (1 / num_tetra) * math.Pow(E-E1, 3) / ((E2 - E1) * (E3 - E1) * (E4 - E1))
+		return (1 / num_tetra) * (E - E1) * (E - E1) * (E - E1) / ((E2 - E1) * (E3 - E1) * (E4 - E1))
 	} else if E2 < E && E < E3 {
 		fac = (1 / num_tetra) / ((E3 - E1) * (E4 - E1))
-		esq = math.Pow(E2-E1, 2) + 3*(E2-E1)*(E-E2) + 3*math.Pow(E-E2, 2)
-		ecub = -(((E3 - E1) + (E4 - E2)) / ((E3 - E2) * (E4 - E2))) * math.Pow(E-E2, 3)
+		esq = (E2-E1)*(E2-E1) + 3*(E2-E1)*(E-E2) + 3*(E-E2)*(E-E2)
+		ecub = -(((E3 - E1) + (E4 - E2)) / ((E3 - E2) * (E4 - E2))) * (E - E2) * (E - E2) * (E - E2)
 		return fac * (esq + ecub)
 	} else if E3 < E && E < E4 {
-		return (1 / num_tetra) * (1 - math.Pow(E4-E, 3)/((E4-E1)*(E4-E2)*(E4-E3)))
+		return (1 / num_tetra) * (1 - (E4-E)*(E4-E)*(E4-E)/((E4-E1)*(E4-E2)*(E4-E3)))
 	} else {
 		// E >= E4
 		return (1 / num_tetra)
 	}
 }
-
-//def _tetra_Es(tetra, band_index, Eks):
-//    '''Return a sorted list of the eigenstate energies at the vertices of the
-//    specified tetrahedron.
-//    '''
-//    Es = []
-//    for kN in tetra:
-//        Es.append(Eks[kN][band_index])
-//    return sorted(Es)
