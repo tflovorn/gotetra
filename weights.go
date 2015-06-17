@@ -4,7 +4,7 @@ func Weight(E_Fermi float64, n, i, j, k, band_index int, Ecache EnergyCache) flo
 	result := 0.0
 	c := 0.0
 	num_tetra := float64(NumTetra(n))
-	Ets_chan, ks_chan := IterTetrasKs(n, band_index, Ecache)
+	Ets_chan, ks_chan := IterTetrasAround(n, i, j, k, band_index, Ecache)
 	// TODO - will calculate weight contributions more times than
 	// necessary. Could solve with weight contributions cache.
 	// (check if (ks, num_bands) weight has been evaluated already).

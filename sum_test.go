@@ -5,7 +5,7 @@ import (
 )
 
 func TestSum_SimpleInsulator(t *testing.T) {
-	n := 4
+	n := 8
 	a := 1.0
 	R := cubicR(a)
 	num_bands := 2
