@@ -5,10 +5,12 @@ package gotetra
 // The calculation of n(E) is implemented as described in BJA94 Appendix A.
 //
 // TODO doc
+// Uses Kahan summation for improved accuracy on dense mesh.
 func NumStates(E float64, n int, Ecache EnergyCache) float64 {
 	result := 0.0
 	num_bands := Ecache.NumBands()
 	num_tetra := float64(NumTetra(n))
+	c := 0.0
 	for band_index := 0; band_index < num_bands; band_index++ {
 		for Ets := range IterTetras(n, band_index, Ecache) {
 			// TODO - make sure that returning Ets from IterTetras
@@ -16,7 +18,11 @@ func NumStates(E float64, n int, Ecache EnergyCache) float64 {
 			// Ets is fixed length, should go on the stack
 			// (created as literal [4]float64{E1, E2, E3, E4}).
 			E1, E2, E3, E4 := Ets[0], Ets[1], Ets[2], Ets[3]
-			result += NumStatesContrib(E, E1, E2, E3, E4, num_tetra)
+			contrib := NumStatesContrib(E, E1, E2, E3, E4, num_tetra)
+			y := contrib - c
+			t := result + y
+			c = (t - result) - y
+			result = t
 		}
 	}
 	return result
