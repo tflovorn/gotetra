@@ -31,6 +31,48 @@ func Weight(E_Fermi float64, n, i, j, k, band_index int, Ecache EnergyCache) flo
 	return result
 }
 
+func BandWeights(E_Fermi float64, n, i, j, k int, Ecache EnergyCache) ([]float64, []float64) {
+	num_bands := Ecache.NumBands()
+	result := make([]float64, num_bands)
+	c := make([]float64, num_bands)
+	num_tetra := float64(NumTetra(n))
+	Ets_chan, ks_chan := BandIterTetrasAround(n, i, j, k, Ecache)
+	this_Es_set := false
+	this_Es := make([]float64, num_bands)
+	// TODO - will calculate weight contributions more times than
+	// necessary. Could solve with weight contributions cache.
+	// (check if (ks, num_bands) weight has been evaluated already).
+
+	// Iterate over all tetrahedra. For each one, if it includes a
+	// contribution to the weight at this k-point, add that contribution.
+	// Ignore the other tetrahedra, and ignore contributions to other
+	// k-points sharing tetrahedra with this one.
+	for Ets := range Ets_chan {
+		ks := <-ks_chan
+		for band_index := 0; band_index < num_bands; band_index++ {
+			for index_k, this_kval := range ks[band_index] {
+				this_i, this_j, this_k := this_kval[0], this_kval[1], this_kval[2]
+				if this_i == i && this_j == j && this_k == k {
+					E1, E2, E3, E4 := Ets[band_index][0], Ets[band_index][1], Ets[band_index][2], Ets[band_index][3]
+					contribs := WeightContrib(E_Fermi, E1, E2, E3, E4, num_tetra)
+					my_contrib := contribs[index_k]
+					y := my_contrib - c[band_index]
+					t := result[band_index] + y
+					c[band_index] = (t - result[band_index]) - y
+					result[band_index] = t
+					if !this_Es_set {
+						for bi := 0; bi < num_bands; bi++ {
+							this_Es[bi] = Ets[bi][index_k]
+						}
+						this_Es_set = true
+					}
+				}
+			}
+		}
+	}
+	return result, this_Es
+}
+
 // Return the specified tetrahedron's contribution to the integration
 // weights at the k-points of the tetrahedron's vertices; i.e. return
 // a list with elements w_{bandIndex, kN, tetra}, where the elements of the

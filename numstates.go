@@ -6,23 +6,32 @@ package gotetra
 //
 // TODO doc
 // Uses Kahan summation for improved accuracy on dense mesh.
-func NumStates(E float64, n int, Ecache EnergyCache) float64 {
-	result := 0.0
+func NumStates(E float64, n int, Ecache EnergyCache, all_bands_at_once bool) float64 {
 	num_bands := Ecache.NumBands()
 	num_tetra := float64(NumTetra(n))
+	result := 0.0
 	c := 0.0
-	for band_index := 0; band_index < num_bands; band_index++ {
-		for Ets := range IterTetras(n, band_index, Ecache) {
-			// TODO - make sure that returning Ets from IterTetras
-			// isn't allocating. Don't expect it to be - since
-			// Ets is fixed length, should go on the stack
-			// (created as literal [4]float64{E1, E2, E3, E4}).
-			E1, E2, E3, E4 := Ets[0], Ets[1], Ets[2], Ets[3]
-			contrib := NumStatesContrib(E, E1, E2, E3, E4, num_tetra)
-			y := contrib - c
-			t := result + y
-			c = (t - result) - y
-			result = t
+	if !all_bands_at_once {
+		for band_index := 0; band_index < num_bands; band_index++ {
+			for Ets := range IterTetras(n, band_index, Ecache) {
+				E1, E2, E3, E4 := Ets[0], Ets[1], Ets[2], Ets[3]
+				contrib := NumStatesContrib(E, E1, E2, E3, E4, num_tetra)
+				y := contrib - c
+				t := result + y
+				c = (t - result) - y
+				result = t
+			}
+		}
+	} else {
+		for Ets := range BandIterTetras(n, Ecache) {
+			for band_index := 0; band_index < num_bands; band_index++ {
+				E1, E2, E3, E4 := Ets[band_index][0], Ets[band_index][1], Ets[band_index][2], Ets[band_index][3]
+				contrib := NumStatesContrib(E, E1, E2, E3, E4, num_tetra)
+				y := contrib - c
+				t := result + y
+				c = (t - result) - y
+				result = t
+			}
 		}
 	}
 	return result

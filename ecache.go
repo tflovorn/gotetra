@@ -6,6 +6,7 @@ import (
 
 type EnergyCache interface {
 	EnergyAt(i, j, k, band_index int) float64
+	BandEnergiesAt(i, j, k int) []float64
 	NumBands() int
 	MinE() float64
 	MaxE() float64
@@ -61,6 +62,25 @@ func (ec *energyCacheRam) EnergyAt(i, j, k, band_index int) float64 {
 		ec.Eks[k_index] = Es
 	}
 	return Es[band_index]
+}
+
+func (ec *energyCacheRam) BandEnergiesAt(i, j, k int) []float64 {
+	k_opt := submesh_ijk_to_k(ec.n, i, j, k)
+	k_index := submesh_index(ec.n, i, j, k)
+	if ec.use_cache && ec.Eks[k_index] != nil {
+		// Already queried this (i, k, k).
+		return ec.Eks[k_index]
+	}
+	// Haven't seen this (i, j, k) before; set it.
+	k_orig := Get_k_Orig(k_opt, ec.G_order, ec.G_neg)
+	Es := ec.Efn(k_orig)
+	if !sort.Float64sAreSorted(Es) {
+		panic("Got unsorted values from Efn in EnergyAt()")
+	}
+	if ec.use_cache {
+		ec.Eks[k_index] = Es
+	}
+	return Es
 }
 
 func (ec *energyCacheRam) NumBands() int {

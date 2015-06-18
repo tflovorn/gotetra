@@ -26,6 +26,7 @@ func simplebands_Efn(k [3]float64, num_bands int, t, E0, deltaE float64) []float
 }
 
 func TestFermi_SimpleInsulator(t *testing.T) {
+	all_bands_at_once := true
 	use_cache := true
 	n := 8
 	a := 1.0
@@ -41,7 +42,7 @@ func TestFermi_SimpleInsulator(t *testing.T) {
 	}
 	Ecache := NewEnergyCache(n, num_bands, G_order, G_neg, Efn, use_cache)
 
-	fermi, err := FindFermi(n, num_electrons, Ecache)
+	fermi, err := FindFermi(n, num_electrons, Ecache, all_bands_at_once)
 	if err != nil {
 		t.Fatal(err)
 	}

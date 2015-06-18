@@ -66,6 +66,58 @@ func sortEsKs(Es *[4]float64, ks *[4][3]int) {
 	}
 }
 
+func BandIterTetras(n int, Ecache EnergyCache) chan [][4]float64 {
+	Ets := make(chan [][4]float64)
+	go bandIterTetras_worker(n, Ecache, Ets, nil)
+	return Ets
+}
+
+func bandIterTetras_worker(n int, Ecache EnergyCache, Ets_chan chan [][4]float64, ks_chan chan [][4][3]int) {
+	// TODO - should vEs be declared before loop for efficency?
+	// Placed in loop since it seems like it may hit race condition if
+	// outside of inner loop scope.
+	tetras := subcell_tetras()
+	num_bands := Ecache.NumBands()
+	// Iterate over tetrahedra.
+	for k := 0; k < n; k++ {
+		for j := 0; j < n; j++ {
+			for i := 0; i < n; i++ {
+				points := subcell_points(i, j, k)
+				for _, sc_t := range tetras {
+					vEs := make([][4]float64, num_bands)
+					ks := make([][4][3]int, num_bands)
+					for band_index := 0; band_index < num_bands; band_index++ {
+						vEs[band_index] = [4]float64{0.0, 0.0, 0.0, 0.0}
+						ks[band_index] = [4][3]int{[3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}}
+					}
+					// Collect band energy at vertices.
+					for v, point_index := range sc_t {
+						pi, pj, pk := points[point_index-1][0], points[point_index-1][1], points[point_index-1][2]
+						all_vEs := Ecache.BandEnergiesAt(pi, pj, pk)
+						for band_index := 0; band_index < num_bands; band_index++ {
+							ks[band_index][v] = [3]int{pi, pj, pk}
+							vEs[band_index][v] = all_vEs[band_index]
+						}
+					}
+					for band_index := 0; band_index < num_bands; band_index++ {
+						// Sort and yield vertex energies.
+						sortEsKs(&vEs[band_index], &ks[band_index])
+					}
+					Ets_chan <- vEs
+					// Yield associated ks if requested.
+					if ks_chan != nil {
+						ks_chan <- ks
+					}
+				}
+			}
+		}
+	}
+	close(Ets_chan)
+	if ks_chan != nil {
+		close(ks_chan)
+	}
+}
+
 func IterTetrasAround(n, i, j, k, band_index int, Ecache EnergyCache) (chan [4]float64, chan [4][3]int) {
 	Ets_chan, ks_chan := make(chan [4]float64), make(chan [4][3]int)
 	go iterTetrasAround_worker(n, i, j, k, band_index, Ecache, Ets_chan, ks_chan)
@@ -84,13 +136,11 @@ func iterTetrasAround_worker(n, i, j, k, band_index int, Ecache EnergyCache, Ets
 			// Collect band energy at vertices.
 			// Skip tetrahedra that do not include (i, j, k).
 			ijk_seen := false
-			for v, point_index := range sc_t {
+			for _, point_index := range sc_t {
 				pi, pj, pk := sc_points[point_index-1][0], sc_points[point_index-1][1], sc_points[point_index-1][2]
 				if pi == i && pj == j && pk == k {
 					ijk_seen = true
 				}
-				ks[v] = [3]int{pi, pj, pk}
-				vEs[v] = Ecache.EnergyAt(pi, pj, pk, band_index)
 			}
 			if !ijk_seen {
 				continue
@@ -102,6 +152,63 @@ func iterTetrasAround_worker(n, i, j, k, band_index int, Ecache EnergyCache, Ets
 			}
 			// Sort and yield vertex energies.
 			sortEsKs(&vEs, &ks)
+			Ets_chan <- vEs
+			// Yield associated ks if requested.
+			if ks_chan != nil {
+				ks_chan <- ks
+			}
+		}
+	}
+	close(Ets_chan)
+	if ks_chan != nil {
+		close(ks_chan)
+	}
+}
+
+func BandIterTetrasAround(n, i, j, k int, Ecache EnergyCache) (chan [][4]float64, chan [][4][3]int) {
+	Ets_chan, ks_chan := make(chan [][4]float64), make(chan [][4][3]int)
+	go bandIterTetrasAround_worker(n, i, j, k, Ecache, Ets_chan, ks_chan)
+	return Ets_chan, ks_chan
+}
+
+func bandIterTetrasAround_worker(n, i, j, k int, Ecache EnergyCache, Ets_chan chan [][4]float64, ks_chan chan [][4][3]int) {
+	num_bands := Ecache.NumBands()
+	tetras := subcell_tetras()
+	subcells := subcells_around_ijk(n, i, j, k)
+	for _, sc := range subcells {
+		sc_i, sc_j, sc_k := sc[0], sc[1], sc[2]
+		sc_points := subcell_points(sc_i, sc_j, sc_k)
+		for _, sc_t := range tetras {
+			vEs := make([][4]float64, num_bands)
+			ks := make([][4][3]int, num_bands)
+			for band_index := 0; band_index < num_bands; band_index++ {
+				vEs[band_index] = [4]float64{0.0, 0.0, 0.0, 0.0}
+				ks[band_index] = [4][3]int{[3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}, [3]int{0, 0, 0}}
+			}
+			// Collect band energy at vertices.
+			// Skip tetrahedra that do not include (i, j, k).
+			ijk_seen := false
+			for _, point_index := range sc_t {
+				pi, pj, pk := sc_points[point_index-1][0], sc_points[point_index-1][1], sc_points[point_index-1][2]
+				if pi == i && pj == j && pk == k {
+					ijk_seen = true
+				}
+			}
+			if !ijk_seen {
+				continue
+			}
+			for v, point_index := range sc_t {
+				pi, pj, pk := sc_points[point_index-1][0], sc_points[point_index-1][1], sc_points[point_index-1][2]
+				all_vEs := Ecache.BandEnergiesAt(pi, pj, pk)
+				for band_index := 0; band_index < num_bands; band_index++ {
+					ks[band_index][v] = [3]int{pi, pj, pk}
+					vEs[band_index][v] = all_vEs[band_index]
+				}
+			}
+			for band_index := 0; band_index < num_bands; band_index++ {
+				// Sort and yield vertex energies.
+				sortEsKs(&vEs[band_index], &ks[band_index])
+			}
 			Ets_chan <- vEs
 			// Yield associated ks if requested.
 			if ks_chan != nil {
