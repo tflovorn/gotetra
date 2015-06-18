@@ -5,7 +5,7 @@ package gotetra
 // Fig. 5) is minimized, in order to minimize interpolation error.
 // The reciprocal lattice vectors may be permuted and/or negated.
 //
-// R = a numpy matrix with rows given by the reciprocal lattice vectors.
+// R = a matrix with rows given by the reciprocal lattice vectors.
 //
 // Returns two vectors G_order = (o0, o1, o2) and G_neg = (n0, n1, n2).
 // The value of G_order is drawn from the permutations of (0, 1, 2) and

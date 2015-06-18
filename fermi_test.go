@@ -33,7 +33,7 @@ func TestFermi_SimpleInsulator(t *testing.T) {
 	R := cubicR(a)
 	G_order, G_neg := OptimizeGs(R)
 	num_bands := 2
-	num_electrons := 1
+	num_electrons := 1.0
 	t0 := 1.0
 	E0 := 6.0
 	deltaE := 14.0 // need deltaE > bandwidth = 12t for insulator

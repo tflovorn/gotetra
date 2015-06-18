@@ -8,11 +8,11 @@ import (
 func TestSum_SimpleInsulator(t *testing.T) {
 	all_bands_at_once := true
 	use_cache := true
-	n := 32
+	n := 8
 	a := 1.0
 	R := cubicR(a)
 	num_bands := 10
-	num_electrons := 1
+	num_electrons := 1.0
 	t0 := 1.0
 	E0 := 6.0
 	deltaE := 14.0 // need deltaE > bandwidth = 12t for insulator

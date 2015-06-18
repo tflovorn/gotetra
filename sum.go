@@ -3,7 +3,7 @@ package gotetra
 type InputFn func(k [3]float64) []float64
 
 // Returns (total energy, Fermi energy, err).
-func SumEnergy(Efn InputFn, n, num_electrons int, R [3][3]float64, all_bands_at_once, use_cache bool) (float64, float64, error) {
+func SumEnergy(Efn InputFn, n int, num_electrons float64, R [3][3]float64, all_bands_at_once, use_cache bool) (float64, float64, error) {
 	G_order, G_neg := OptimizeGs(R)
 	k0 := [3]float64{0.0, 0.0, 0.0}
 	num_bands := len(Efn(k0))

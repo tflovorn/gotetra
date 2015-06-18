@@ -7,10 +7,10 @@ package gotetra
 // up-spins or only down-spins but instead contain all states of both types.
 //
 // TODO doc
-func FindFermi(n, num_electrons int, Ecache EnergyCache, all_bands_at_once bool) (float64, error) {
+func FindFermi(n int, num_electrons float64, Ecache EnergyCache, all_bands_at_once bool) (float64, error) {
 	statecount_error := func(E float64) float64 {
 		count := NumStates(E, n, Ecache, all_bands_at_once)
-		return count - float64(num_electrons)
+		return count - num_electrons
 	}
 	emin := Ecache.MinE()
 	emax := Ecache.MaxE()
